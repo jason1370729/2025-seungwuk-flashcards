@@ -1,12 +1,20 @@
 <script>
 	import '../app.css';
-	import favicon from '$lib/assets/favicon.svg';
 
+	/** @type {{children: import('svelte').Snippet}} */
 	let { children } = $props();
 </script>
 
-<svelte:head>
-	<link rel="icon" href={favicon} />
-</svelte:head>
-
-{@render children?.()}
+<div class="flex min-h-screen flex-col">
+	<div class="flex-1">
+		{@render children()}
+	</div>
+	<div class="flex h-20 items-center justify-evenly bg-base-300">
+		<a href="/">
+			<button class="btn btn-square"><i class="fa-regular fa-folder"></i></button>
+		</a>
+		<a href="/camara">
+			<button class="btn btn-square"><i class="fa-regular fa-camera"></i></button>
+		</a>
+	</div>
+</div>

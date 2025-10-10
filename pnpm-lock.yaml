@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      daisyui:
+        specifier: ^5.2.0
+        version: 5.2.0
     devDependencies:
       '@sveltejs/adapter-vercel':
         specifier: ^5.10.2
@@ -587,6 +591,9 @@ packages:
     resolution: {integrity: sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==}
     engines: {node: '>=4'}
     hasBin: true
+
+  daisyui@5.2.0:
+    resolution: {integrity: sha512-/DXfgR3qI5nGEzBygK9kXsKHO+abiMyv31efTi5ezEsZcrojq9cyNrrgX3+FxHyXSorxJ+CVUG7Ho9nUrCBmfg==}
 
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
@@ -1481,6 +1488,8 @@ snapshots:
       which: 2.0.2
 
   cssesc@3.0.0: {}
+
+  daisyui@5.2.0: {}
 
   debug@4.4.3:
     dependencies:

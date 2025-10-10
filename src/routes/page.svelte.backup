@@ -1,0 +1,96 @@
+<script>
+  import { FAKE_DATA as flashcards } from '../data.js';
+  let categories = $state([]);
+  let category = $state("");
+  let selectedCategory = $state("");
+  let selectedGroup = $state("");
+  let groups = $state([
+    { group: 'math-1', category: "Math" },
+    { group: 'math-2', category: "Math" },
+  ]);
+
+  $effect(() => {
+    getCategories();
+  })
+
+  function addCategory() {
+    categories.push(category);
+    category="";
+    localStorage.setItem("categories", JSON.stringify(categories));
+  }
+
+  function deleteCategory(subject) {
+    categories = categories.filter((v) => v !== subject);
+    localStorage.setItem("categories", JSON.stringify(categories));
+    my_modal_2.hideModal();
+  }
+
+  function selectCategory(c) {
+    my_modal_2.showModal();
+    console.log(c);
+    selectedCategory = c;
+  }
+
+  function selectGroup(g) {
+    my_modal_3.showModal();
+    selectedGroup = g;
+  }
+
+  function getCategories() {
+    if(localStorage.getItem("categories") !== null) {
+      categories = JSON.parse(localStorage.getItem("categories"));
+    }
+  }
+
+
+</script>
+
+<div class="flex-grow flex flex-col">
+  <div class="flex-grow flex w-full flex-col items-start">
+    {#each categories as subject, index}
+      <div onclick={() => selectCategory(subject)} class="p-1 h-30 w-full">{subject}</div>
+    {/each}
+  </div>
+  <div class="w-full flex p-2">
+    <input bind:value={category} class="flex-grow input input-neutral"/>
+    <button onclick={() => addCategory()} class="btn btn-active">+ category</button>
+  </div>
+</div>
+
+<!-- subject modal -->
+<dialog id="my_modal_2" class="modal">
+  <div class="modal-box flex justify-between">
+    <h3 class="text-lg font-bold">{selectedCategory}</h3>
+    <div>
+    {#each groups.filter((g) => g.category === selectedCategory) as v, i}
+      <button onclick={() => selectGroup(v)}>
+        {v.group}
+      </button>
+    {/each}
+    </div>
+    <div class="flex justify-end">  
+      <button onclick={() => deleteCategory(selectedCategory)} class="btn btn-square"><i class="fa-solid fa-trash-can"></i></button>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+
+<!-- flashcards modal -->
+<dialog id="my_modal_3" class="modal">
+  <div class="modal-box flex justify-between">
+    <h3 class="text-lg font-bold">{selectedCategory}</h3>
+    {selectedGroup.group}
+    {#each flashcards.filter((v) => v.category === selectedCategory && v.group === v.group) as card, i}
+      <div>{card.question}</div>
+      <div>{card.answer}</div>
+    {/each}
+    <div class="flex justify-end">  
+      <button onclick={() => deleteCategory(selectedCategory)} class="btn btn-square"><i class="fa-solid fa-trash-can"></i></button>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
