@@ -1,12 +1,13 @@
 @import 'tailwindcss';
 @plugin "daisyui";
 @plugin "daisyui/theme" {
-  name: 'forest';
-  default: true;
-  --radius-field: 0.25rem;
+	name: 'forest';
+	default: true;
+	prefersdark: true;
+	--radius-field: 0.25rem;
 }
 * {
-  font-family: 'Jost', sans-serif;
-  font-optical-sizing: auto;
-  font-style: normal;
+	font-family: 'Jost', sans-serif;
+	font-optical-sizing: auto;
+	font-style: normal;
 }

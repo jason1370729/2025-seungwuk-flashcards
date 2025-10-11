@@ -76,7 +76,7 @@
     <div onclick={() => flipCard()} class="h-50 w-100 bg-base-300 rounded-3xl text-left p-4 text-2xl flex items-center break-normal">{flipped ? FAKE_DATA[index]?.answer : FAKE_DATA[index]?.question}</div>
 
     <div class={`mt-5 space-x-2 flex ${!flipped && "hidden"}`}>
-      <button onclick={() => nextCard(true)} class="btn btn-soft bg-green-400"><i class="fa-solid fa-check"></i></button>
+      <button onclick={() => nextCard(true)} class="btn btn-soft bg-green-400"><i class="fa-solid fa-check text-white"></i></button>
       <button onclick={() => nextCard(false)} class="btn btn-soft bg-red-400"><i class="fa-solid fa-xmark"></i></button>
     </div>
   </div>

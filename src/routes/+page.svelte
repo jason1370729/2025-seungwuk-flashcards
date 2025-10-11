@@ -29,5 +29,4 @@
   <FLASHCARD card={card} />
 {/each}
 
-
 </div>
