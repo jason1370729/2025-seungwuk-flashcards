@@ -5,8 +5,8 @@
 	let { children } = $props();
 </script>
 
-<div class="flex min-h-screen flex-col">
-	<div class="flex-1">
+<div class="flex h-screen flex-col">
+	<div class="flex-1 overflow-y-auto">
 		{@render children()}
 	</div>
 	<div class="flex h-20 items-center justify-evenly bg-base-300">

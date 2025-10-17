@@ -1,32 +1,31 @@
 <script>
-  import FLASHCARD from "../lib/flash-card.svelte";
-  import {CARDS } from "../utils/cards-data.js";
-  import { onMount } from 'svelte';
+	import FLASHCARD from '../lib/flash-card.svelte';
+	import { CARDS } from '../utils/cards-data.js';
+	import { onMount } from 'svelte';
 
-  let cards = $state(CARDS);
+	let cards = $state(CARDS);
 
-  onMount(() => {
-    let c = localStorage.getItem("cards");
-    if(c !== null) {
-      cards = JSON.parse(c);
-    }
-  })
+	onMount(() => {
+		let c = localStorage.getItem('cards');
+		if (c !== null) {
+			cards = JSON.parse(c);
+		}
+	});
 </script>
 
-<div class="badge badge-warning m-2">upcoming work</div>
-<div class="w-full min-h-80 rounded-3xl flex flex-col flex-wrap p-5 space-y-5 flex-grow bg-green-900">
-
-{#each cards.filter((c) => c.score < 100) as card}
-  <FLASHCARD card={card} />
-{/each}
-
-
+<div class="m-2 badge badge-warning">upcoming work</div>
+<div
+	class="flex min-h-80 w-full flex-grow flex-col flex-wrap space-y-5 rounded-3xl bg-green-900 p-5"
+>
+	{#each cards.filter((c) => c.score < 100) as card}
+		<FLASHCARD {card} />
+	{/each}
 </div>
-<div class="badge badge-success m-2">completed</div>
-<div class="w-full min-h-80 rounded-3xl flex flex-col flex-wrap p-5 space-y-5 flex-grow bg-green-900">
-
-{#each cards.filter((c) => c.score === 100) as card}
-  <FLASHCARD card={card} />
-{/each}
-
+<div class="m-2 badge badge-success">completed</div>
+<div
+	class="flex min-h-80 w-full flex-grow flex-col flex-wrap space-y-5 rounded-3xl bg-green-900 p-5"
+>
+	{#each cards.filter((c) => c.score === 100) as card}
+		<FLASHCARD {card} />
+	{/each}
 </div>

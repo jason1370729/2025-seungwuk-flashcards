@@ -30,6 +30,7 @@
 		]
 	},
 	"dependencies": {
+		"@google/genai": "^1.25.0",
 		"daisyui": "^5.2.0"
 	}
 }
