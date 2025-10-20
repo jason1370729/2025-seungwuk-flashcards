@@ -1,114 +1,274 @@
 <script>
-	import { FAKE_DATA } from '../../../data.js';
-	import { CARDS } from '../../../utils/cards-data.js';
 	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
 
-	let index = $state(0);
-	let flipped = $state(false);
-	let score = $state(0);
-	let results = [];
-	let pastResults = $state([]);
+	let flashcardSet = $state(null);
+	let currentCardIndex = $state(0);
+	let showAnswer = $state(false);
+	let quizProgress = $state([]);
+	let quizCompleted = $state(false);
+	let setId = $state(null);
 
-	onMount(() => {
-		let r = localStorage.getItem('cards');
-
-		if (r !== null) {
-			r = JSON.parse(r);
-			console.log(123, r[1]);
-			pastResults = r[1].results;
+	$effect(() => {
+		// Get the ID from the URL
+		const id = $page.params.id;
+		if (id && !setId) {
+			setId = parseInt(id);
+			loadQuiz();
 		}
 	});
 
-	function flipCard() {
-		flipped = !flipped;
-	}
+	function loadQuiz() {
+		// Load flashcard set from localStorage
+		const sets = localStorage.getItem('flashcardSets');
+		if (sets) {
+			const allSets = JSON.parse(sets);
+			flashcardSet = allSets.find((set) => set.id === setId);
 
-	function nextCard(correct) {
-		flipCard();
+			if (flashcardSet) {
+				// Initialize progress array
+				quizProgress = flashcardSet.cards.map(() => ({
+					answered: false,
+					correct: null
+				}));
 
-		results.push(correct);
+				// Load existing progress if available
+				loadProgress();
 
-		if (FAKE_DATA.length > index) {
-			index += 1;
-			if (correct) {
-				score++;
+				// Skip to first unanswered question
+				skipToNextUnanswered();
 			}
 		}
+	}
 
-		if (index >= FAKE_DATA.length) {
-			let updated = CARDS.map((c) =>
-				c.id === 2 ? { ...c, score: (score / FAKE_DATA.length) * 100, results } : c
-			);
-
-			localStorage.setItem('cards', JSON.stringify(updated));
+	function loadProgress() {
+		const progressKey = 'quiz_progress_' + setId;
+		const savedProgress = localStorage.getItem(progressKey);
+		if (savedProgress) {
+			const progress = JSON.parse(savedProgress);
+			quizProgress = progress;
 		}
 	}
 
-	function restart() {
-		score = 0;
-		index = 0;
+	function saveProgress() {
+		const progressKey = 'quiz_progress_' + setId;
+		localStorage.setItem(progressKey, JSON.stringify(quizProgress));
+
+		// Also update the flashcardSets with the latest progress
+		updateFlashcardSetProgress();
 	}
+
+	function updateFlashcardSetProgress() {
+		const sets = localStorage.getItem('flashcardSets');
+		if (sets) {
+			const allSets = JSON.parse(sets);
+			const setIndex = allSets.findIndex((set) => set.id === setId);
+
+			if (setIndex !== -1) {
+				// Calculate progress statistics
+				const correct = quizProgress.filter((p) => p.correct).length;
+				const incorrect = quizProgress.filter((p) => p.answered && !p.correct).length;
+				const total = flashcardSet.cards.length;
+				const allCompleted = quizProgress.every((p) => p.answered);
+
+				// Update the set with progress information
+				allSets[setIndex].progress = {
+					correct,
+					incorrect,
+					total,
+					completed: allCompleted,
+					lastAttempt: new Date().toISOString()
+				};
+
+				// Save back to localStorage
+				localStorage.setItem('flashcardSets', JSON.stringify(allSets));
+			}
+		}
+	}
+
+	function skipToNextUnanswered() {
+		// Find the first unanswered question
+		for (let i = 0; i < quizProgress.length; i++) {
+			if (!quizProgress[i].answered || !quizProgress[i].correct) {
+				currentCardIndex = i;
+				return;
+			}
+		}
+		// If all questions are answered correctly, stay at current position
+	}
+
+	function checkAnswer() {
+		showAnswer = true;
+	}
+
+	function markCorrect() {
+		quizProgress[currentCardIndex] = {
+			answered: true,
+			correct: true
+		};
+		saveProgress();
+		moveToNext();
+	}
+
+	function markIncorrect() {
+		quizProgress[currentCardIndex] = {
+			answered: true,
+			correct: false
+		};
+		saveProgress();
+		moveToNext();
+	}
+
+	function moveToNext() {
+		showAnswer = false;
+
+		// Check if quiz is completed
+		const allAnswered = quizProgress.every((p) => p.answered);
+		if (allAnswered) {
+			quizCompleted = true;
+			return;
+		}
+
+		// Move to next card
+		if (currentCardIndex < flashcardSet.cards.length - 1) {
+			currentCardIndex++;
+			// Skip already correct answers
+			while (
+				currentCardIndex < flashcardSet.cards.length &&
+				quizProgress[currentCardIndex].correct
+			) {
+				currentCardIndex++;
+			}
+		}
+	}
+
+	function goToQuestion(index) {
+		currentCardIndex = index;
+		showAnswer = false;
+	}
+
+	function restartQuiz() {
+		quizProgress = flashcardSet.cards.map(() => ({
+			answered: false,
+			correct: null
+		}));
+		currentCardIndex = 0;
+		showAnswer = false;
+		quizCompleted = false;
+		saveProgress();
+	}
+
+	let correctCount = $derived(quizProgress.filter((p) => p.correct).length);
+	let incorrectCount = $derived(quizProgress.filter((p) => p.answered && !p.correct).length);
 </script>
 
-<div class="flex flex-grow flex-col items-center justify-center space-y-10">
-	<!-- score -->
-	<div class="text-2xl">{score}</div>
+{#if !flashcardSet}
+	<div class="flex h-screen items-center justify-center">
+		<p class="text-xl">Loading quiz...</p>
+	</div>
+{:else if quizCompleted}
+	<div class="flex h-screen flex-col items-center justify-center space-y-6 p-6">
+		<h1 class="text-4xl font-bold">Quiz Completed! 🎉</h1>
+		<div class="stats shadow">
+			<div class="stat">
+				<div class="stat-title">Correct</div>
+				<div class="stat-value text-success">{correctCount}</div>
+			</div>
+			<div class="stat">
+				<div class="stat-title">Incorrect</div>
+				<div class="stat-value text-error">{incorrectCount}</div>
+			</div>
+			<div class="stat">
+				<div class="stat-title">Total</div>
+				<div class="stat-value">{flashcardSet.cards.length}</div>
+			</div>
+		</div>
+		<div class="flex space-x-4">
+			<a href="/" class="btn btn-primary">Go Home</a>
+			<button onclick={restartQuiz} class="btn btn-secondary">Restart Quiz</button>
+		</div>
+	</div>
+{:else}
+	<div class="container mx-auto p-6">
+		<!-- Header with quiz name -->
+		<div class="mb-6">
+			<h1 class="text-3xl font-bold">{flashcardSet.name}</h1>
+			<p class="text-sm text-base-content/70">
+				Progress: {correctCount} correct, {incorrectCount} incorrect
+			</p>
+		</div>
 
-	<!-- progress -->
-	<div class="join">
-		{#each FAKE_DATA as q, i}
-			<div
-				class={`relative flex flex-col items-center ${i < FAKE_DATA.length - 1 && 'border-r border-accent'}`}
-			>
-				{#if i < index && results[i]}
-					<button class="btn join-item btn-success"
-						>O
-						{#if pastResults[i]}
-							<div class="h-2 w-2 bg-success"></div>
-						{/if}
-					</button>
-				{:else if i < index && !results[i]}
-					<button class="btn join-item btn-error">X</button>
-				{:else if i == index}
-					<button class="btn btn-active join-item">{i + 1}</button>
-				{:else}
-					<button class="btn join-item">{i + 1}</button>
+		<!-- Problem number indicators -->
+		<div class="mb-8 flex flex-wrap gap-2">
+			{#each flashcardSet.cards as card, index}
+				<button
+					onclick={() => goToQuestion(index)}
+					class="btn btn-sm {currentCardIndex === index
+						? 'btn-primary'
+						: quizProgress[index].correct
+							? 'btn-success'
+							: quizProgress[index].answered && !quizProgress[index].correct
+								? 'btn-error'
+								: 'btn-ghost'}"
+				>
+					{index + 1}
+				</button>
+			{/each}
+		</div>
+
+		<!-- Current question card -->
+		<div class="card bg-base-100 shadow-xl">
+			<div class="card-body">
+				<h2 class="mb-4 card-title">
+					Question {currentCardIndex + 1} of {flashcardSet.cards.length}
+				</h2>
+
+				<!-- Question -->
+				<div class="mb-6 rounded-lg bg-info p-6 text-info-content">
+					<p class="text-xl font-semibold">
+						{flashcardSet.cards[currentCardIndex].question}
+					</p>
+				</div>
+
+				<!-- Skip indicator if already correct -->
+				{#if quizProgress[currentCardIndex].correct}
+					<div class="mb-4 alert alert-success">
+						<span>✓ Previously answered correctly - Skipped</span>
+					</div>
 				{/if}
-				{#if pastResults[i]}
-					<div class="absolute h-2 w-2 rounded-full bg-success"></div>
+
+				<!-- Show answer button or answer with self-evaluation -->
+				{#if !showAnswer && !quizProgress[currentCardIndex].correct}
+					<div class="mb-6 rounded-lg bg-base-200 p-6 text-center">
+						<p class="mb-4 text-base-content/70">
+							Think of your answer, then click below to reveal the correct answer
+						</p>
+						<button onclick={checkAnswer} class="btn btn-lg btn-primary"> Show Answer </button>
+					</div>
+				{/if}
+
+				<!-- Show correct answer and self-evaluation buttons -->
+				{#if showAnswer}
+					<div class="mb-6 rounded-lg bg-success p-6 text-success-content">
+						<p class="mb-2 font-semibold">Answer:</p>
+						<p class="text-xl">{flashcardSet.cards[currentCardIndex].answer}</p>
+					</div>
+
+					<div class="mb-4 text-center">
+						<p class="mb-4 text-lg font-semibold">Did you get it right?</p>
+					</div>
+
+					<div class="card-actions justify-center space-x-4">
+						<button onclick={markCorrect} class="btn btn-lg btn-success">✓ Correct</button>
+						<button onclick={markIncorrect} class="btn btn-lg btn-error">✗ Incorrect</button>
+					</div>
 				{/if}
 			</div>
-		{/each}
-	</div>
-
-	<!-- SCORE SCREEN -->
-	<div class={`${FAKE_DATA.length > index && 'hidden'}`}>
-		<div class="flex h-70 w-50 items-center justify-center rounded-3xl bg-base-300 text-7xl">
-			{score}/{index}
-			<a href="/">
-				<button class="btn absolute top-5 right-5 flex btn-circle"
-					><i class="fa-solid fa-xmark"></i></button
-				>
-			</a>
-		</div>
-	</div>
-
-	<!-- FLASH CARD SCREEN -->
-	<div class={`${FAKE_DATA.length <= index && 'hidden'} select-none`}>
-		<div
-			onclick={() => flipCard()}
-			class="flex h-50 w-100 items-center rounded-3xl bg-base-300 p-4 text-left text-2xl break-normal"
-		>
-			{flipped ? FAKE_DATA[index]?.answer : FAKE_DATA[index]?.question}
 		</div>
 
-		<div class={`mt-5 flex space-x-2 ${!flipped && 'hidden'}`}>
-			<button onclick={() => nextCard(true)} class="btn bg-green-400 btn-soft"
-				><i class="fa-solid fa-check text-white"></i></button
-			>
-			<button onclick={() => nextCard(false)} class="btn bg-red-400 btn-soft"
-				><i class="fa-solid fa-xmark"></i></button
-			>
+		<!-- Navigation -->
+		<div class="mt-6 flex justify-between">
+			<a href="/" class="btn btn-ghost">← Back to Home</a>
 		</div>
 	</div>
-</div>
+{/if}

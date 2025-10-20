@@ -6,15 +6,15 @@
 </script>
 
 <div class="flex h-screen flex-col">
-	<div class="flex-1 overflow-y-auto">
+	<div class="flex-1 overflow-y-auto p-4">
 		{@render children()}
 	</div>
 	<div class="flex h-20 items-center justify-evenly bg-base-300">
-		<a href="/">
-			<button class="btn btn-square"><i class="fa-regular fa-folder"></i></button>
+		<a href="/" class="btn btn-square" aria-label="home">
+			<i class="fa-regular fa-folder"></i>
 		</a>
-		<a href="/camara">
-			<button class="btn btn-square"><i class="fa-regular fa-camera"></i></button>
+		<a href="/camara" class="btn btn-square" aria-label="camera">
+			<i class="fa-regular fa-camera"></i>
 		</a>
 	</div>
 </div>
