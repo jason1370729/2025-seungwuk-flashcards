@@ -1,5 +1,6 @@
 <script>
 	import './loading.css';
+	import { onMount } from 'svelte';
 	import { PUBLIC_GEMINI_API } from '$env/static/public';
 	import { GoogleGenAI } from '@google/genai';
 	let loading = $state(true);
@@ -7,6 +8,8 @@
 	let selectedFile = $state(null);
 	let numberOfCards = $state(5);
 	let cardSetName = $state('');
+	let fileInput;
+	let myModal3;
 
 	$effect(() => {
 		if (localStorage.getItem('categories') !== null) {
@@ -71,6 +74,29 @@
 			selectedFile = file;
 		}
 	}
+
+	// When opened on mobile, open the modal and trigger the file input to prompt the camera.
+	onMount(() => {
+		try {
+			const ua = navigator.userAgent || '';
+			const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || navigator.maxTouchPoints > 0;
+			if (isMobile) {
+				// Show the modal first so the input is in the DOM and visible.
+				myModal3?.showModal();
+
+				// A short delay helps ensure the dialog is visible before triggering the file picker.
+				setTimeout(() => {
+					// Programmatically clicking the file input will usually open the camera on mobile when
+					// the input has the `capture` attribute and accept="image/*". Some browsers may still
+					// block programmatic clicks as non-user gestures; keep a visible button as a fallback.
+					fileInput?.click();
+				}, 150);
+			}
+		} catch (e) {
+			// noop
+			console.warn('Auto-open camera failed', e);
+		}
+	});
 
 	async function fileToBase64(file) {
 		return new Promise((resolve, reject) => {
@@ -161,7 +187,7 @@
 	>
 </div>
 
-<dialog id="my_modal_3" class="modal">
+<dialog id="my_modal_3" class="modal" bind:this={myModal3}>
 	<div class="modal-box">
 		<form method="dialog">
 			<button class="btn absolute top-2 right-2 btn-circle btn-ghost btn-sm">✕</button>
@@ -199,6 +225,8 @@
 				type="file"
 				class="file-input-bordered file-input w-full"
 				accept="image/*,.txt"
+				capture="environment"
+				bind:this={fileInput}
 				onchange={handleFileChange}
 			/>
 		</div>
